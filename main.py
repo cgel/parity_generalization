@@ -42,6 +42,7 @@ class MLP(torch.nn.Module):
     def __init__(self, n_in, hidden_dims, n_out):
         super().__init__()
         all_dims = [n_in] + hidden_dims + [n_out] 
+        self.dims = all_dims
         self.layers = []
         for i in range(len(all_dims) - 2):
             self.layers.append(torch.nn.Linear(all_dims[i], all_dims[i + 1]))
@@ -64,8 +65,10 @@ D = full_D
 print("dataset size:", D.b)
 print("dataset.inputs:\n", D.inputs)
 print("dataset.targets:\n", D.targets)
+
 # model = MLP(n, [1024*32], 2)
-model = MLP(n, [4096, 4096], 2)
+model = MLP(n, [256*full_D.b], 2)
+print("model.dims: ", model.dims)
 
 def train(model, dataset, steps, lr=1e-3):
     x, y = dataset.inputs, dataset.targets
@@ -75,8 +78,7 @@ def train(model, dataset, steps, lr=1e-3):
         loss = torch.nn.CrossEntropyLoss()(output, y)
         loss.backward()
         if _ % (steps // 10) == 0:
-            acc = accuracy(model, dataset)
-            full_acc = accuracy(model, full_D)
+            acc, full_acc = accuracy(model, dataset), accuracy(model, full_D)
             grad_norm = sum(p.grad.norm() for p in model.parameters())
             print(f'Step {_}: loss: {loss.item():.2e} grad_norm: {grad_norm:.2e} accuracy: {acc*100:.2f}% full_accuracy: {full_acc*100:.2f}%')
         for p in model.parameters():
